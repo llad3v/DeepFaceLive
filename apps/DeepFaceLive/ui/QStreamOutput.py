@@ -6,8 +6,7 @@ from xlib.qt.widgets.QXLabel import QXLabel
 from ..backend import StreamOutput
 from .widgets.QBackendPanel import QBackendPanel
 from .widgets.QCheckBoxCSWFlag import QCheckBoxCSWFlag
-from .widgets.QComboBoxCSWDynamicSingleSwitch import \
-    QComboBoxCSWDynamicSingleSwitch
+from .widgets.QComboBoxCSWDynamicSingleSwitch import QComboBoxCSWDynamicSingleSwitch
 from .widgets.QErrorCSWError import QErrorCSWError
 from .widgets.QLabelCSWNumber import QLabelCSWNumber
 from .widgets.QLabelPopupInfo import QLabelPopupInfo
@@ -15,7 +14,6 @@ from .widgets.QLineEditCSWText import QLineEditCSWText
 from .widgets.QPathEditCSWPaths import QPathEditCSWPaths
 from .widgets.QSpinBoxCSWNumber import QSpinBoxCSWNumber
 from .widgets.QXPushButtonCSWSignal import QXPushButtonCSWSignal
-
 
 class QStreamOutput(QBackendPanel):
     def __init__(self, backend : StreamOutput):
@@ -48,6 +46,13 @@ class QStreamOutput(QBackendPanel):
         q_stream_addr = QLineEditCSWText(cs.stream_addr, font=QXFontDB.get_fixedwidth_font())
         q_stream_port = QSpinBoxCSWNumber(cs.stream_port)
 
+        # Add RTSP streaming controls
+        q_is_rtsp_streaming_label = QLabelPopupInfo(label='rtsp://')
+        q_is_rtsp_streaming       = QCheckBoxCSWFlag(cs.is_rtsp_streaming, reflect_state_widgets=[q_is_rtsp_streaming_label])
+
+        q_rtsp_stream_addr = QLineEditCSWText(cs.rtsp_stream_addr, font=QXFontDB.get_fixedwidth_font())
+        q_rtsp_stream_port = QSpinBoxCSWNumber(cs.rtsp_stream_port)
+
         grid_l = qtx.QXGridLayout(spacing=5)
         row = 0
         grid_l.addWidget(q_average_fps_label, row, 0, 1, 1, alignment=qtx.AlignRight | qtx.AlignVCenter )
@@ -74,6 +79,11 @@ class QStreamOutput(QBackendPanel):
         row += 1
         grid_l.addLayout( qtx.QXHBoxLayout([q_is_streaming, 4, q_is_streaming_label]), row, 0, 1, 1, alignment=qtx.AlignRight | qtx.AlignVCenter )
         grid_l.addLayout( qtx.QXHBoxLayout([q_stream_addr, qtx.QXLabel(text=':'), q_stream_port]), row, 1, 1, 2, alignment=qtx.AlignLeft | qtx.AlignVCenter )
+        row += 1
+
+        # Add RTSP streaming controls to the layout
+        grid_l.addLayout( qtx.QXHBoxLayout([q_is_rtsp_streaming, 4, q_is_rtsp_streaming_label]), row, 0, 1, 1, alignment=qtx.AlignRight | qtx.AlignVCenter )
+        grid_l.addLayout( qtx.QXHBoxLayout([q_rtsp_stream_addr, qtx.QXLabel(text=':'), q_rtsp_stream_port]), row, 1, 1, 2, alignment=qtx.AlignLeft | qtx.AlignVCenter )
         row += 1
 
         super().__init__(backend, L('@QStreamOutput.module_title'),
