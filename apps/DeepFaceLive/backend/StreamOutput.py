@@ -16,54 +16,34 @@ from .BackendBase import (BackendConnection, BackendDB, BackendHost,
                           BackendSignal, BackendWeakHeap, BackendWorker,
                           BackendWorkerState)
 
-
-class StreamOutput(BackendHost):
+class StreamOutputRTSP(BackendHost):
     """
-    Bufferizes and shows the stream in separated window.
+    Bufferizes and streams the output via RTSP.
     """
-    def __init__(self, weak_heap : BackendWeakHeap,
-                       reemit_frame_signal : BackendSignal,
-                       bc_in : BackendConnection,
-                       save_default_path : Path = None,
-                       backend_db : BackendDB = None):
+    def __init__(self, weak_heap: BackendWeakHeap,
+                       reemit_frame_signal: BackendSignal,
+                       bc_in: BackendConnection,
+                       save_default_path: Path = None,
+                       backend_db: BackendDB = None):
 
         super().__init__(backend_db=backend_db,
                          sheet_cls=Sheet,
                          worker_cls=StreamOutputWorker,
                          worker_state_cls=WorkerState,
-                         worker_start_args=[weak_heap, reemit_frame_signal, bc_in, save_default_path] )
+                         worker_start_args=[weak_heap, reemit_frame_signal, bc_in, save_default_path])
 
-    def get_control_sheet(self) -> 'Sheet.Host': return super().get_control_sheet()
-
-class SourceType(IntEnum):
-    SOURCE_FRAME = 0
-    ALIGNED_FACE = 1
-    SWAPPED_FACE = 2
-    MERGED_FRAME = 3
-    MERGED_FRAME_OR_SOURCE_FRAME = 4
-    SOURCE_N_MERGED_FRAME = 5
-    SOURCE_N_MERGED_FRAME_OR_SOURCE_FRAME = 6
-    ALIGNED_N_SWAPPED_FACE = 7
-
-ViewModeNames = ['@StreamOutput.SourceType.SOURCE_FRAME',
-                 '@StreamOutput.SourceType.ALIGNED_FACE',
-                 '@StreamOutput.SourceType.SWAPPED_FACE',
-                 '@StreamOutput.SourceType.MERGED_FRAME',
-                 '@StreamOutput.SourceType.MERGED_FRAME_OR_SOURCE_FRAME',
-                 '@StreamOutput.SourceType.SOURCE_N_MERGED_FRAME',
-                 '@StreamOutput.SourceType.SOURCE_N_MERGED_FRAME_OR_SOURCE_FRAME',
-                 '@StreamOutput.SourceType.ALIGNED_N_SWAPPED_FACE',
-                 ]
-
-
+    def get_control_sheet(self) -> 'Sheet.Host':
+        return super().get_control_sheet()
 
 class StreamOutputWorker(BackendWorker):
-    def get_state(self) -> 'WorkerState': return super().get_state()
-    def get_control_sheet(self) -> 'Sheet.Worker': return super().get_control_sheet()
+    def get_state(self) -> 'WorkerState':
+        return super().get_state()
 
-    def on_start(self, weak_heap : BackendWeakHeap, reemit_frame_signal : BackendSignal,
-                       bc_in : BackendConnection,
-                       save_default_path : Path):
+    def get_control_sheet(self) -> 'Sheet.Worker':
+        return super().get_control_sheet()
+
+    def on_start(self, weak_heap: BackendWeakHeap, reemit_frame_signal: BackendSignal,
+                       bc_in: BackendConnection, save_default_path: Path):
         self.weak_heap = weak_heap
         self.reemit_frame_signal = reemit_frame_signal
         self.bc_in = bc_in
@@ -75,7 +55,7 @@ class StreamOutputWorker(BackendWorker):
 
         self.prev_frame_num = -1
 
-        self._wnd_name = 'DeepFaceLive output'
+        self._wnd_name = 'DeepFaceLive RTSP output'
         self._wnd_showing = False
 
         self._streamer = FFMPEGStreamer()
@@ -117,14 +97,14 @@ class StreamOutputWorker(BackendWorker):
             cs.show_hide_window.signal()
 
         cs.save_sequence_path.enable()
-        cs.save_sequence_path.set_config( lib_csw.Paths.Config.Directory('Choose output sequence directory', directory_path=save_default_path) )
+        cs.save_sequence_path.set_config(lib_csw.Paths.Config.Directory('Choose output sequence directory', directory_path=save_default_path))
         cs.save_sequence_path.set_paths(state.sequence_path)
 
         cs.save_fill_frame_gap.enable()
-        cs.save_fill_frame_gap.set_flag(state.save_fill_frame_gap if state.save_fill_frame_gap is not None else True )
+        cs.save_fill_frame_gap.set_flag(state.save_fill_frame_gap if state.save_fill_frame_gap is not None else True)
 
         cs.is_streaming.enable()
-        cs.is_streaming.set_flag(state.is_streaming if state.is_streaming is not None else False )
+        cs.is_streaming.set_flag(state.is_streaming if state.is_streaming is not None else False)
 
         cs.stream_addr.enable()
         cs.stream_addr.set_text(state.stream_addr if state.stream_addr is not None else '127.0.0.1')
@@ -171,7 +151,6 @@ class StreamOutputWorker(BackendWorker):
         self.save_state()
         self.reemit_frame_signal.send()
 
-
     def on_cs_aligned_face_id(self, aligned_face_id):
         state, cs = self.get_state(), self.get_control_sheet()
         cfg = cs.aligned_face_id.get_config()
@@ -189,7 +168,7 @@ class StreamOutputWorker(BackendWorker):
         self.save_state()
         self.reemit_frame_signal.send()
 
-    def on_cs_save_sequence_path(self, paths : List[Path], prev_paths):
+    def on_cs_save_sequence_path(self, paths: List[Path], prev_paths):
         state, cs = self.get_state(), self.get_control_sheet()
         cs.save_sequence_path_error.set_error(None)
         sequence_path = paths[0] if len(paths) != 0 else None
@@ -231,7 +210,7 @@ class StreamOutputWorker(BackendWorker):
         bcd = self.bc_in.read(timeout=0.005)
         if bcd is not None:
             bcd.assign_weak_heap(self.weak_heap)
-            cs.avg_fps.set_number( self.fps_counter.step() )
+            cs.avg_fps.set_number(self.fps_counter.step())
 
             prev_frame_num = self.prev_frame_num
             frame_num = self.prev_frame_num = bcd.get_frame_num()
@@ -278,7 +257,7 @@ class StreamOutputWorker(BackendWorker):
                         merged_frame = source_frame
 
                     if source_frame is not None and merged_frame is not None:
-                        view_image = np.concatenate( (source_frame, merged_frame), 1 )
+                        view_image = np.concatenate((source_frame, merged_frame), 1)
 
                 elif source_type == SourceType.ALIGNED_N_SWAPPED_FACE:
                     aligned_face_id = state.aligned_face_id
@@ -295,11 +274,10 @@ class StreamOutputWorker(BackendWorker):
                             break
 
                     if aligned_face is not None and swapped_face is not None:
-                        view_image = np.concatenate( (aligned_face, swapped_face), 1 )
-
+                        view_image = np.concatenate((aligned_face, swapped_face), 1)
 
                 if view_image is not None:
-                    buffered_frames.add_buffer( bcd.get_frame_timestamp(), view_image )
+                    buffered_frames.add_buffer(bcd.get_frame_timestamp(), view_image)
 
                     if state.sequence_path is not None:
                         img = ImageProcessor(view_image, copy=True).to_uint8().get_image('HWC')
@@ -310,7 +288,7 @@ class StreamOutputWorker(BackendWorker):
                         for i in range(frame_diff):
                             n = frame_num - i
                             filename = f'{n:06}'
-                            lib_cv.imwrite(state.sequence_path / (filename+file_ext), img, cv_args)
+                            lib_cv.imwrite(state.sequence_path / (filename + file_ext), img, cv_args)
 
                 pr = buffered_frames.process()
 
@@ -325,45 +303,3 @@ class StreamOutputWorker(BackendWorker):
 
         if state.is_showing_window:
             cv2.waitKey(1)
-
-class Sheet:
-    class Host(lib_csw.Sheet.Host):
-        def __init__(self):
-            super().__init__()
-            self.source_type = lib_csw.DynamicSingleSwitch.Client()
-            self.aligned_face_id = lib_csw.Number.Client()
-            self.target_delay = lib_csw.Number.Client()
-            self.avg_fps = lib_csw.Number.Client()
-            self.show_hide_window = lib_csw.Signal.Client()
-            self.save_sequence_path = lib_csw.Paths.Client()
-            self.save_sequence_path_error = lib_csw.Error.Client()
-            self.save_fill_frame_gap = lib_csw.Flag.Client()
-            self.is_streaming = lib_csw.Flag.Client()
-            self.stream_addr = lib_csw.Text.Client()
-            self.stream_port = lib_csw.Number.Client()
-
-    class Worker(lib_csw.Sheet.Worker):
-        def __init__(self):
-            super().__init__()
-            self.source_type = lib_csw.DynamicSingleSwitch.Host()
-            self.aligned_face_id = lib_csw.Number.Host()
-            self.target_delay = lib_csw.Number.Host()
-            self.avg_fps = lib_csw.Number.Host()
-            self.show_hide_window = lib_csw.Signal.Host()
-            self.save_sequence_path = lib_csw.Paths.Host()
-            self.save_sequence_path_error = lib_csw.Error.Host()
-            self.save_fill_frame_gap = lib_csw.Flag.Host()
-            self.is_streaming = lib_csw.Flag.Host()
-            self.stream_addr = lib_csw.Text.Host()
-            self.stream_port = lib_csw.Number.Host()
-
-class WorkerState(BackendWorkerState):
-    source_type : SourceType = None
-    is_showing_window : bool = None
-    aligned_face_id : int = None
-    target_delay : int = None
-    sequence_path : Path = None
-    save_fill_frame_gap : bool = None
-    is_streaming : bool = None
-    stream_addr : str = None
-    stream_port : int = None
