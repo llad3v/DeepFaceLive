@@ -46,12 +46,33 @@ class QStreamOutput(QBackendPanel):
         q_stream_addr = QLineEditCSWText(cs.stream_addr, font=QXFontDB.get_fixedwidth_font())
         q_stream_port = QSpinBoxCSWNumber(cs.stream_port)
 
-        # Add RTSP streaming controls
-        q_is_rtsp_streaming_label = QLabelPopupInfo(label='rtsp://')
-        q_is_rtsp_streaming       = QCheckBoxCSWFlag(cs.is_rtsp_streaming, reflect_state_widgets=[q_is_rtsp_streaming_label])
+        # SMTP controls
+        q_smtp_enable_label = QLabelPopupInfo(label='SMTP email')
+        q_smtp_enable       = QCheckBoxCSWFlag(cs.smtp_enable, reflect_state_widgets=[q_smtp_enable_label])
 
-        q_rtsp_stream_addr = QLineEditCSWText(cs.rtsp_stream_addr, font=QXFontDB.get_fixedwidth_font())
-        q_rtsp_stream_port = QSpinBoxCSWNumber(cs.rtsp_stream_port)
+        q_smtp_host = QLineEditCSWText(cs.smtp_host, font=QXFontDB.get_fixedwidth_font())
+        q_smtp_port = QSpinBoxCSWNumber(cs.smtp_port)
+
+        q_smtp_username = QLineEditCSWText(cs.smtp_username, font=QXFontDB.get_fixedwidth_font())
+        q_smtp_password = QLineEditCSWText(cs.smtp_password, font=QXFontDB.get_fixedwidth_font())
+
+        q_smtp_use_tls_label = QLabelPopupInfo(label='TLS')
+        q_smtp_use_tls       = QCheckBoxCSWFlag(cs.smtp_use_tls, reflect_state_widgets=[q_smtp_use_tls_label])
+        q_smtp_starttls_label = QLabelPopupInfo(label='STARTTLS')
+        q_smtp_starttls       = QCheckBoxCSWFlag(cs.smtp_starttls, reflect_state_widgets=[q_smtp_starttls_label])
+
+        q_smtp_from_label = QLabelPopupInfo(label='From')
+        q_smtp_from       = QLineEditCSWText(cs.smtp_from, font=QXFontDB.get_fixedwidth_font())
+        q_smtp_to_label = QLabelPopupInfo(label='To (comma-separated)')
+        q_smtp_to       = QLineEditCSWText(cs.smtp_to, font=QXFontDB.get_fixedwidth_font())
+
+        q_smtp_subject_label = QLabelPopupInfo(label='Subject')
+        q_smtp_subject       = QLineEditCSWText(cs.smtp_subject, font=QXFontDB.get_fixedwidth_font())
+        q_smtp_body_label = QLabelPopupInfo(label='Body')
+        q_smtp_body       = QLineEditCSWText(cs.smtp_body, font=QXFontDB.get_fixedwidth_font())
+
+        q_smtp_interval_label = QLabelPopupInfo(label='Interval (ms)')
+        q_smtp_interval       = QSpinBoxCSWNumber(cs.smtp_interval_ms)
 
         grid_l = qtx.QXGridLayout(spacing=5)
         row = 0
@@ -81,9 +102,33 @@ class QStreamOutput(QBackendPanel):
         grid_l.addLayout( qtx.QXHBoxLayout([q_stream_addr, qtx.QXLabel(text=':'), q_stream_port]), row, 1, 1, 2, alignment=qtx.AlignLeft | qtx.AlignVCenter )
         row += 1
 
-        # Add RTSP streaming controls to the layout
-        grid_l.addLayout( qtx.QXHBoxLayout([q_is_rtsp_streaming, 4, q_is_rtsp_streaming_label]), row, 0, 1, 1, alignment=qtx.AlignRight | qtx.AlignVCenter )
-        grid_l.addLayout( qtx.QXHBoxLayout([q_rtsp_stream_addr, qtx.QXLabel(text=':'), q_rtsp_stream_port]), row, 1, 1, 2, alignment=qtx.AlignLeft | qtx.AlignVCenter )
+        # SMTP section
+        grid_l.addLayout( qtx.QXHBoxLayout([q_smtp_enable, 4, q_smtp_enable_label]), row, 0, 1, 1, alignment=qtx.AlignRight | qtx.AlignVCenter )
+        grid_l.addLayout( qtx.QXHBoxLayout([q_smtp_host, qtx.QXLabel(text=':'), q_smtp_port]), row, 1, 1, 2, alignment=qtx.AlignLeft | qtx.AlignVCenter )
+        row += 1
+
+        grid_l.addLayout( qtx.QXHBoxLayout([QXLabel(text='User'), 4, q_smtp_username, 10, QXLabel(text='Pass'), 4, q_smtp_password]), row, 1, 1, 2, alignment=qtx.AlignLeft | qtx.AlignVCenter )
+        row += 1
+
+        grid_l.addLayout( qtx.QXHBoxLayout([q_smtp_use_tls, 4, q_smtp_use_tls_label, 20, q_smtp_starttls, 4, q_smtp_starttls_label]), row, 1, 1, 2, alignment=qtx.AlignLeft | qtx.AlignVCenter )
+        row += 1
+
+        grid_l.addWidget(q_smtp_from_label, row, 0, 1, 1, alignment=qtx.AlignRight | qtx.AlignVCenter )
+        grid_l.addLayout( qtx.QXHBoxLayout([q_smtp_from]), row, 1, 1, 2, alignment=qtx.AlignLeft | qtx.AlignVCenter )
+        row += 1
+        grid_l.addWidget(q_smtp_to_label, row, 0, 1, 1, alignment=qtx.AlignRight | qtx.AlignVCenter )
+        grid_l.addLayout( qtx.QXHBoxLayout([q_smtp_to]), row, 1, 1, 2, alignment=qtx.AlignLeft | qtx.AlignVCenter )
+        row += 1
+
+        grid_l.addWidget(q_smtp_subject_label, row, 0, 1, 1, alignment=qtx.AlignRight | qtx.AlignVCenter )
+        grid_l.addLayout( qtx.QXHBoxLayout([q_smtp_subject]), row, 1, 1, 2, alignment=qtx.AlignLeft | qtx.AlignVCenter )
+        row += 1
+        grid_l.addWidget(q_smtp_body_label, row, 0, 1, 1, alignment=qtx.AlignRight | qtx.AlignVCenter )
+        grid_l.addLayout( qtx.QXHBoxLayout([q_smtp_body]), row, 1, 1, 2, alignment=qtx.AlignLeft | qtx.AlignVCenter )
+        row += 1
+
+        grid_l.addWidget(q_smtp_interval_label, row, 0, 1, 1, alignment=qtx.AlignRight | qtx.AlignVCenter )
+        grid_l.addLayout( qtx.QXHBoxLayout([q_smtp_interval]), row, 1, 1, 2, alignment=qtx.AlignLeft | qtx.AlignVCenter )
         row += 1
 
         super().__init__(backend, L('@QStreamOutput.module_title'),
