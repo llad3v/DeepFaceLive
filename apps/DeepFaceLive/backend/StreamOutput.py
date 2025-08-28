@@ -113,6 +113,12 @@ class StreamOutputWorker(BackendWorker):
         cs.stream_port.set_config(lib_csw.Number.Config(min=1, max=9999, decimals=0, allow_instant_update=True))
         cs.stream_port.set_number(state.stream_port if state.stream_port is not None else 1234)
 
+        # initialize streamer with default udp url unless a full url was provided previously
+        if state.stream_addr is not None and '://' in str(state.stream_addr):
+            self._streamer.set_output_url(state.stream_addr)
+        else:
+            self._streamer.set_udp(state.stream_addr or '127.0.0.1', state.stream_port or 1234)
+
     def on_stop(self):
         self._streamer.stop()
 
@@ -196,13 +202,19 @@ class StreamOutputWorker(BackendWorker):
         state, cs = self.get_state(), self.get_control_sheet()
         state.stream_addr = stream_addr
         self.save_state()
-        self._streamer.set_addr_port(state.stream_addr, state.stream_port)
+        # If user supplied a full URL (e.g., srt://host:port?...), use it directly; otherwise treat as UDP host
+        if stream_addr is not None and '://' in stream_addr:
+            self._streamer.set_output_url(stream_addr)
+        else:
+            self._streamer.set_udp(state.stream_addr, state.stream_port)
 
     def on_cs_stream_port(self, stream_port):
         state, cs = self.get_state(), self.get_control_sheet()
         state.stream_port = stream_port
         self.save_state()
-        self._streamer.set_addr_port(state.stream_addr, state.stream_port)
+        # Changing port only applies to UDP-style settings
+        if state.stream_addr is None or '://' not in state.stream_addr:
+            self._streamer.set_udp(state.stream_addr or '127.0.0.1', state.stream_port)
 
     def on_tick(self):
         cs, state = self.get_control_sheet(), self.get_state()
